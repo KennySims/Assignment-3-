@@ -30,30 +30,36 @@ def BWParse(file):
     finish = num_to_token.get(finish, finish)
 
     k = int(raw_lines[2 + n].split()[0])
-    print(adjacency_dict, k, start, finish)
+    #print(adjacency_dict, k, start, finish)
     return adjacency_dict, k, start, finish
 
 def runBW(adjacency_dict, k, start, finish):
 
     print(adjacency_dict, k, start, finish)
-    queue = deque([(start, 0)])
+    queue = deque([(start, 0, [])])
     visited = set([start])
 
     while queue:
-        current_vertex, depth = queue.popleft()
+        current_vertex, depth, pathlist = queue.popleft()
 
         if current_vertex == finish and depth <= k:
-            return True
+            return True, pathlist + [current_vertex]
 
         if depth < k:
             for neighbor in adjacency_dict[current_vertex]:
                 if neighbor not in visited:
-                    if current_vertex[-1] == "w" and neighbor[-1] == "r":
+                    if len(pathlist) < 2:
+                        print("test")
+                        if current_vertex[-1] == neighbor[-1]:
+                            continue
+                    elif current_vertex[-1] == neighbor[-1] or pathlist[-1][-1] == neighbor[-1]:
+                        print("Skipping neighbor", neighbor, "from", current_vertex, "due to color constraint")
                         continue
                     visited.add(neighbor)
-                    queue.append((neighbor, depth + 1, ))
+                    queue.append((neighbor, depth + 1, pathlist + [current_vertex]))
 
-    return False
+    return False, []
+
 def parseDAGSP(file):
     with open(file, "r", encoding="utf-8") as f:
         raw_lines = [line.strip() for line in f if line.strip()]
@@ -76,7 +82,7 @@ def parseDAGSP(file):
     start, finish = start_finish[0], start_finish[1]
 
     k = int(raw_lines[2 + n].split()[0])
-    print(adjacency_dict, k, start, finish)
+    #print(adjacency_dict, k, start, finish)
     return adjacency_dict, k, start, finish
         
 def transformDAGSP(adjacency_dict, k, start, finish):
@@ -88,20 +94,30 @@ def transformDAGSP(adjacency_dict, k, start, finish):
             b_node = str(newnodes) + "b"
             r_node = str(newnodes + 1) + "r"
             neighbor_w = str(neighbor) + "w"
-
-            transformedadjacency_dict[str(vertex) + "w"].append(b_node)
-            transformedadjacency_dict.setdefault(b_node, []).append(r_node)
-            transformedadjacency_dict.setdefault(r_node, []).append(neighbor_w)
-            transformedadjacency_dict.setdefault(neighbor_w, [])
-            newnodes += 2
-    return transformedadjacency_dict, k, start+"w", finish+"w"
+            if neighbor == start:
+                    transformedadjacency_dict.setdefault(str(vertex) + "w", []).append(b_node)
+                    transformedadjacency_dict.setdefault(b_node, []).append(neighbor_w)
+                    transformedadjacency_dict.setdefault(b_node, []).append(str(vertex) + "w")
+                    transformedadjacency_dict.setdefault(neighbor_w, []).append(b_node)
+                    newnodes += 1
+            else:
+                transformedadjacency_dict.setdefault(str(vertex) + "w", []).append(b_node)
+                transformedadjacency_dict.setdefault(b_node, []).append(r_node)
+                transformedadjacency_dict.setdefault(b_node, []).append(str(vertex) + "w")
+                transformedadjacency_dict.setdefault(r_node, []).append(b_node)
+                transformedadjacency_dict.setdefault(r_node, []).append(neighbor_w)
+                transformedadjacency_dict.setdefault(neighbor_w, []).append(r_node)
+                newnodes += 2
+    return transformedadjacency_dict, k*3, start+"w", finish+"w"
             
 def main():
 
     adjacency_dict, k, start, finish = parseDAGSP("input2.txt")
     adjacency_dict, k, start, finish = transformDAGSP(adjacency_dict, k, start, finish)
-    result = runBW(adjacency_dict, k, start, finish)
+    result, path = runBW(adjacency_dict, k, start, finish)
     print("YES" if result else "NO")
+    if result:
+        print("Path:", " -> ".join(path))
 
 if __name__ == "__main__":
     main()
