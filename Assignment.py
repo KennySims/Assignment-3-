@@ -35,7 +35,7 @@ def BWParse(file):
 
 def runBW(adjacency_dict, k, start, finish):
 
-    print(adjacency_dict, k, start, finish)
+    #print(adjacency_dict, k, start, finish)
     queue = deque([(start, 0, [])])
     visited = set([start])
 
@@ -48,12 +48,10 @@ def runBW(adjacency_dict, k, start, finish):
         if depth < k:
             for neighbor in adjacency_dict[current_vertex]:
                 if neighbor not in visited:
-                    if len(pathlist) < 2:
-                        print("test")
-                        if current_vertex[-1] == neighbor[-1]:
-                            continue
-                    elif current_vertex[-1] == neighbor[-1] or pathlist[-1][-1] == neighbor[-1]:
-                        print("Skipping neighbor", neighbor, "from", current_vertex, "due to color constraint")
+                    recent_colors = {current_vertex[-1]}
+                    if pathlist:
+                        recent_colors.add(pathlist[-1][-1])
+                    if neighbor[-1] in recent_colors:
                         continue
                     visited.add(neighbor)
                     queue.append((neighbor, depth + 1, pathlist + [current_vertex]))
@@ -111,13 +109,27 @@ def transformDAGSP(adjacency_dict, k, start, finish):
     return transformedadjacency_dict, k*3, start+"w", finish+"w"
             
 def main():
-
-    adjacency_dict, k, start, finish = parseDAGSP("input2.txt")
-    adjacency_dict, k, start, finish = transformDAGSP(adjacency_dict, k, start, finish)
-    result, path = runBW(adjacency_dict, k, start, finish)
-    print("YES" if result else "NO")
-    if result:
-        print("Path:", " -> ".join(path))
+    # adjacency_dict, k, start, finish = parseDAGSP("input7.txt")
+    # adjacency_dict, k, start, finish = transformDAGSP(adjacency_dict, k, start, finish)
+    # result, path = runBW(adjacency_dict, k, start, finish)
+    # print("Accept" if result else "Reject")
+    # if result:
+    #     print("Path:", " -> ".join(path))
+    problem1 = ["input.txt", "input2.txt", "input3.txt", "input4.txt", "input5.txt"]
+    problem2 = ["input6.txt", "input7.txt", "input8.txt", "input9.txt", "input10.txt"]
+    for file in problem1:
+        adjacency_dict, k, start, finish = BWParse(file)
+        result, path = runBW(adjacency_dict, k, start, finish)
+        print("Accept" if result else "Reject")
+        if result:
+            print("Path:", " -> ".join(path))
+    for file in problem2:
+        adjacency_dict, k, start, finish = parseDAGSP(file)
+        adjacency_dict, k, start, finish = transformDAGSP(adjacency_dict, k, start, finish)
+        result, path = runBW(adjacency_dict, k, start, finish)
+        print("Accept" if result else "Reject")
+        if result:
+            print("Path:", " -> ".join(path))
 
 if __name__ == "__main__":
     main()
